@@ -6,12 +6,15 @@
 //
 
 import SwiftUI
+import ComposableArchitecture
 
 @main
 struct Headway_TestApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(store: .init(initialState: BookPlayerFeature.State(), reducer: { BookPlayerFeature() }))
         }
     }
 }
+
+

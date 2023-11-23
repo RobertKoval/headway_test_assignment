@@ -18,7 +18,7 @@ extension DependencyValues {
 
 extension FeedbackGeneratorClient: DependencyKey {
     static let liveValue = Self {
-        await UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        await UIImpactFeedbackGenerator(style: .light).impactOccurred()
     } selectionOccured: {
         await UISelectionFeedbackGenerator().selectionChanged()
     }

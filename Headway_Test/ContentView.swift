@@ -29,8 +29,8 @@ struct BookPlayerFeature: Reducer {
         case chapterListSwitchToggled
         case trackPlaybackProgress
         case rewind(Double)
-
-
+        
+        
         // Side effects
         case playbackFinished
         case playerIsPlaying
@@ -41,14 +41,14 @@ struct BookPlayerFeature: Reducer {
         case tracksLoaded([LoadedTrack])
         case error(String)
     }
-
+    
     enum PlaybackSpeed: Double {
         case slow = 0.5
         case normal = 1.0
         case fast = 1.5
         case superFast = 2.0
     }
-
+    
     struct State: Equatable {
         var book: Book = mockBook
         var isLoading = false
@@ -56,9 +56,9 @@ struct BookPlayerFeature: Reducer {
         var currentTrack: LoadedTrack?
         var isPlaying = false
         var playbackProgress: Double = 0
-
+        
         var isChapterListOpen: Bool = false
-
+        
         var playbackSpeed: PlaybackSpeed = .normal
         var chapterDescription: String = ""
         var chapterNumber: Int = 1
@@ -66,36 +66,36 @@ struct BookPlayerFeature: Reducer {
         var currentTime: TimeInterval = 0
         var totalPlaybackTime: TimeInterval = 360
     }
-
+    
     @Dependency(\.audioPlayer) var audioPlayer
     @Dependency(\.feedbackGenerator) var feedbackGenerator
     @Dependency(\.chapterRepository) var chapterRepository
-
+    
     private enum CancelID {
         case playbackProgress
         case trackID
         case playbackTime
     }
-
+    
     var body: some ReducerOf<Self> {
         Reduce { state, action in
             switch action {
             case .onAppear:
                 state.isLoading = true
-
+                
                 return .merge(
                     .run { [book = state.book] send in
                         do {
                             let chapters = try await chapterRepository.getChaptersFor(book)
                             let tracks = chapters.map({ AudioTrack(id: $0.id, url: $0.audioFile) })
                             let metadata = try await audioPlayer.loadPlaylist(tracks)
-
+                            
                             let loadedChapters = chapters.filter({ chapter in metadata.contains(where: { $0.trackId == chapter.id }) })
-
+                            
                             let loadedTracks = zip(loadedChapters, metadata).map { chapter, metadata in
                                 LoadedTrack(id: chapter.id, title: chapter.title, duration: metadata.duration)
                             }
-
+                            
                             await send(.tracksLoaded(loadedTracks))
                         } catch {
                             await send(.error(error.localizedDescription))
@@ -126,29 +126,37 @@ struct BookPlayerFeature: Reducer {
                         await audioPlayer.play()
                         await send(.playerIsPlaying)
                     }
+                    await feedbackGenerator.impactOccurred()
                 }
             case .goBackward5ButtonTapped:
                 return .run { send in
                     try await audioPlayer.rewindSeconds(-5)
+                    await feedbackGenerator.impactOccurred()
                 }
             case .goForward10ButtonTapped:
                 return .run { send in
                     try await audioPlayer.rewindSeconds(10)
+                    await feedbackGenerator.impactOccurred()
                 }
             case .playPreviousButtonTapped:
                 return .run { send in
                     await audioPlayer.playPrevious()
+                    await feedbackGenerator.impactOccurred()
                 }
             case .playNextButtonTapped:
                 return .run { send in
                     await audioPlayer.playNext()
+                    await feedbackGenerator.impactOccurred()
                 }
             case .rewindButtonTapped:
                 print("Tapped")
                 return .none
-            case .selectChapterButtonTapped(_):
-                print("Tapped")
-                return .none
+            case let .selectChapterButtonTapped(id):
+                return .run { _ in
+                    await audioPlayer.playWithId(id)
+                    await feedbackGenerator.impactOccurred()
+                    
+                }
             case let .rewind(value):
                 return .run { send in
                     try await audioPlayer.rewind(value)
@@ -167,7 +175,7 @@ struct BookPlayerFeature: Reducer {
                         await send(.playbackProgress(progress))
                     }
                 }.cancellable(id: CancelID.playbackProgress)
-
+                
             case .playbackFinished:
                 print("Tapped")
                 return .none
@@ -182,7 +190,7 @@ struct BookPlayerFeature: Reducer {
                 state.loadedTracks = loadedTracks
                 state.currentTrack = loadedTracks.first
                 return .send(.trackPlaybackProgress)
-
+                
             case .error(_):
                 print("Tapped")
                 return .none
@@ -201,8 +209,8 @@ struct BookPlayerFeature: Reducer {
 struct ContentView: View {
     let store: StoreOf<BookPlayerFeature>
     @State var player: Double = 0
-
-
+    
+    
     var body: some View {
         WithViewStore(store, observe: { $0 }) { store in
             GeometryReader { screen in
@@ -211,17 +219,17 @@ struct ContentView: View {
                         bookImage
                             .opacity(store.isChapterListOpen ? 0 : 1)
                             .offset(x: store.isChapterListOpen ? -screen.size.width : 0)
-
+                        
                         bookScrollView
                             .opacity(store.isChapterListOpen ? 1 : 0)
                             .offset(x: store.isChapterListOpen ? 0 : screen.size.width)
                     }
                     .frame(maxHeight: screen.size.height * 0.5)
                     .animation(.easeInOut, value: store.isChapterListOpen)
-
+                    
                     bookDescription
-
-
+                    
+                    
                     if let track = store.currentTrack  {
                         HStack {
                             timeTitle(formatTime(store.currentTime)).foregroundStyle(Color.hwGraySecondary)
@@ -238,7 +246,7 @@ struct ContentView: View {
                         .padding(.vertical)
                         .redacted(reason: .placeholder)
                     }
-
+                    
                     Button {
                         print("Button tapped!")
                     } label: {
@@ -246,12 +254,12 @@ struct ContentView: View {
                     }
                     .buttonStyle(.bordered)
                     .foregroundStyle(Color.black)
-
+                    
                     Spacer()
                     playerButtons
-
+                    
                     Spacer()
-
+                    
                     PageSwitch(isToggled: store.binding(get: \.isChapterListOpen, send: .chapterListSwitchToggled),
                                leftIcon: Image(systemName: "headphones"),
                                rightIcon: Image(systemName: "text.alignright"))
@@ -264,18 +272,18 @@ struct ContentView: View {
                 store.send(.onAppear)
             }
         }
-
-
+        
+        
     }
-
+    
     var bookImage: some View  {
         Image("book_1")
             .resizable()
             .aspectRatio(contentMode: .fit)
             .clipShape(RoundedRectangle(cornerSize: CGSize(width: 10, height: 10)))
-
+        
     }
-
+    
     var bookScrollView: some View {
         WithViewStore(store, observe: { $0 }) { state in
             List {
@@ -284,20 +292,21 @@ struct ContentView: View {
                         Text(track.title)
                         Spacer()
                         timeTitle(formatTime(track.duration))
-
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding()
+                    .listRowBackground(state.currentTrack?.id == track.id ? Color(.systemFill) : Color.hwBackground)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                    .listRowSeparatorTint(Color.hwGray)
+                    .onTapGesture {
+                        store.send(.selectChapterButtonTapped(track.id))
+                    }
                 }
-                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-                .listRowBackground(Color.hwBackground)
-                .listRowSeparatorTint(Color.hwGray)
             }
             .listStyle(.plain)
-            .background(Color.green)
         }
     }
-
+    
     var bookDescription: some View {
         WithViewStore(store, observe: { $0 }) { state in
             if let currentTrack = state.currentTrack {
@@ -306,7 +315,7 @@ struct ContentView: View {
                         .fontWeight(.medium)
                         .foregroundStyle(Color.hwGraySecondary)
                         .padding(4)
-
+                    
                     Text(currentTrack.title)
                         .fontWeight(.light)
                         .multilineTextAlignment(.center)
@@ -320,31 +329,31 @@ struct ContentView: View {
             }
         }
     }
-
+    
     func timeTitle(_ time: String) -> some View {
         Text(time).font(.custom("Spot Mono Regular", size: 17, relativeTo: .body))
     }
-
+    
     var playerButtons: some View {
         WithViewStore(store, observe: { $0 }) { state in
             HStack(spacing: 16) {
                 playerButton(with: "backward.end.fill", imageSize: .init(width: 32, height: 32)) {
                     store.send(.playPreviousButtonTapped)
                 }
-
+                
                 playerButton(with: "gobackward.5", imageSize: .init(width: 40, height: 40)) {
                     store.send(.goBackward5ButtonTapped)
                 }
-
+                
                 playerButton(with: state.isPlaying ? "pause.fill" : "play.fill", imageSize: .init(width: 44, height: 44)) {
                     store.send(.playPauseButtonTapped)
                 }
-
-
+                
+                
                 playerButton(with: "goforward.10", imageSize: .init(width: 40, height: 40)) {
                     store.send(.goForward10ButtonTapped)
                 }
-
+                
                 playerButton(with: "forward.end.fill", imageSize: .init(width: 32, height: 32)) {
                     store.send(.playNextButtonTapped)
                 }
@@ -352,7 +361,7 @@ struct ContentView: View {
             .foregroundColor(.black)
         }
     }
-
+    
     func playerButton(with imageName: String, imageSize: CGSize, action: @escaping () -> Void) -> some View {
         Button {
             action()
@@ -364,13 +373,13 @@ struct ContentView: View {
         }
         .frame(width: 44, height: 44)
     }
-
+    
     func formatTime(_ time: TimeInterval) -> String {
         let formatter = DateComponentsFormatter()
         formatter.allowedUnits = [.minute, .second]
         formatter.unitsStyle = .positional
         formatter.zeroFormattingBehavior = .pad
-
+        
         if let formattedString = formatter.string(from: time) {
             return formattedString
         } else {

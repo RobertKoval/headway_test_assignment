@@ -35,7 +35,8 @@ extension AudioPlayerClient: DependencyKey {
             setPlaybackSpeed: { _ in },
             rewind: {  try await player.rewind($0) },
             rewindSeconds: { try await player.rewind(seconds: $0) },
-            currentAudioId: { await player.currentAudioIdStream }
+            currentAudioId: { await player.currentAudioIdStream },
+            playWithId: { await player.playWithId($0) }
         )
     }()
 }
@@ -100,6 +101,17 @@ fileprivate actor AudioPlayer: Sendable {
         }
     }
 
+    func resetPlaylist() {
+        player.removeAllItems()
+        playlist.forEach { item in
+            item.item.seek(to: .zero, completionHandler: nil)
+        }
+        playlist.forEach { item in
+            player.insert(item.item, after: nil)
+        }
+        self.currentItem = playlist.first
+    }
+
     func load(tracks: [AudioTrack]) async throws -> [Metadata] {
         var metadata: [Metadata] = []
         var playlist: [PlaylistItem] = []
@@ -114,7 +126,7 @@ fileprivate actor AudioPlayer: Sendable {
                 player.insert(item, after: nil)
             }
         }
-        
+
         self.playlist = playlist
         self.currentItem = playlist.first
 
@@ -125,13 +137,28 @@ fileprivate actor AudioPlayer: Sendable {
         await player.play()
     }
 
+    func playWithId(_ id: Int) {
+        if let index = playlist.firstIndex(where: { $0.id == id }) {
+            player.removeAllItems()
+            playlist.forEach { item in
+                item.item.seek(to: .zero, completionHandler: nil)
+            }
+            let newlist = playlist.suffix(from: index)
+
+            newlist.forEach { item in
+                player.insert(item.item, after: nil)
+            }
+            self.currentItem = newlist.first
+        }
+    }
+
     func pause() async {
         await player.pause()
     }
 
     func playNextTrack() {
         if let currentItem {
-            if playlist.isLastElement(currentItem) { return }
+            if playlist.isLastElement(currentItem) { resetPlaylist(); return }
             setNextCurrentItem(currentItem: currentItem.item)
             player.advanceToNextItem()
         }
@@ -211,7 +238,7 @@ fileprivate actor AudioPlayer: Sendable {
         let (stream, continuation) = AsyncStream.makeStream(of: TimeInterval.self)
 
         let observer = player.addPeriodicTimeObserver(forInterval: CMTime(seconds: 1, preferredTimescale: 1), queue: .main) { time in
-                continuation.yield(time.seconds)
+            continuation.yield(time.seconds)
         }
 
         let container = ObserverContainer(observer: observer)

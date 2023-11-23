@@ -27,6 +27,9 @@
 		F4269C592B0DD7A600ABC228 /* FeedbackGeneratorClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4269C582B0DD7A600ABC228 /* FeedbackGeneratorClient.swift */; };
 		F4269C5B2B0DD7F700ABC228 /* FeedbackGeneratorClientLive.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4269C5A2B0DD7F700ABC228 /* FeedbackGeneratorClientLive.swift */; };
 		F4269C632B0DEF7800ABC228 /* Headway_TestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4269C622B0DEF7800ABC228 /* Headway_TestTests.swift */; };
+		F4269C702B0F2EAF00ABC228 /* ChapterRepositoryClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4269C6F2B0F2EAF00ABC228 /* ChapterRepositoryClient.swift */; };
+		F4269C722B0F2EDF00ABC228 /* ChapterRepositoryClientLive.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4269C712B0F2EDF00ABC228 /* ChapterRepositoryClientLive.swift */; };
+		F4269C762B0FBD0B00ABC228 /* IsLastElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4269C752B0FBD0B00ABC228 /* IsLastElement.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -61,6 +64,9 @@
 		F4269C5A2B0DD7F700ABC228 /* FeedbackGeneratorClientLive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackGeneratorClientLive.swift; sourceTree = "<group>"; };
 		F4269C602B0DEF7800ABC228 /* Headway_TestTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Headway_TestTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F4269C622B0DEF7800ABC228 /* Headway_TestTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Headway_TestTests.swift; sourceTree = "<group>"; };
+		F4269C6F2B0F2EAF00ABC228 /* ChapterRepositoryClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChapterRepositoryClient.swift; sourceTree = "<group>"; };
+		F4269C712B0F2EDF00ABC228 /* ChapterRepositoryClientLive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChapterRepositoryClientLive.swift; sourceTree = "<group>"; };
+		F4269C752B0FBD0B00ABC228 /* IsLastElement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IsLastElement.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -103,6 +109,7 @@
 		F40A24AE2B0BA00100D6BC7E /* Headway_Test */ = {
 			isa = PBXGroup;
 			children = (
+				F4269C6E2B0F2E8D00ABC228 /* ChapterRepositoryClient */,
 				F4269C572B0DD79000ABC228 /* FeedbackGeneratorClient */,
 				F4269C462B0D339500ABC228 /* SampleData */,
 				F4269C452B0CE97000ABC228 /* DataClient */,
@@ -130,6 +137,7 @@
 			isa = PBXGroup;
 			children = (
 				F40A24C02B0BA5C400D6BC7E /* Constants.swift */,
+				F4269C752B0FBD0B00ABC228 /* IsLastElement.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -195,6 +203,15 @@
 				F4269C622B0DEF7800ABC228 /* Headway_TestTests.swift */,
 			);
 			path = Headway_TestTests;
+			sourceTree = "<group>";
+		};
+		F4269C6E2B0F2E8D00ABC228 /* ChapterRepositoryClient */ = {
+			isa = PBXGroup;
+			children = (
+				F4269C6F2B0F2EAF00ABC228 /* ChapterRepositoryClient.swift */,
+				F4269C712B0F2EDF00ABC228 /* ChapterRepositoryClientLive.swift */,
+			);
+			path = ChapterRepositoryClient;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -310,8 +327,11 @@
 			files = (
 				F40A24C52B0BC1E900D6BC7E /* PlayerProgressView.swift in Sources */,
 				F40A24B22B0BA00100D6BC7E /* ContentView.swift in Sources */,
+				F4269C762B0FBD0B00ABC228 /* IsLastElement.swift in Sources */,
+				F4269C702B0F2EAF00ABC228 /* ChapterRepositoryClient.swift in Sources */,
 				F4269C542B0D353700ABC228 /* AudioPlayerClient.swift in Sources */,
 				F40A24B02B0BA00100D6BC7E /* Headway_TestApp.swift in Sources */,
+				F4269C722B0F2EDF00ABC228 /* ChapterRepositoryClientLive.swift in Sources */,
 				F4269C562B0D369500ABC228 /* AudioPlayerClientLive.swift in Sources */,
 				F4269C5B2B0DD7F700ABC228 /* FeedbackGeneratorClientLive.swift in Sources */,
 				F40A24CC2B0BFF4C00D6BC7E /* Book.swift in Sources */,

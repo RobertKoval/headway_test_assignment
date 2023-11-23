@@ -7,6 +7,7 @@
 
 import Dependencies
 import AVFoundation
+import OrderedCollections
 
 extension DependencyValues {
     var audioPlayer: AudioPlayerClient {
@@ -25,34 +26,215 @@ extension AudioPlayerClient: DependencyKey {
 
         return AudioPlayerClient(
             loadPlaylist: { try await player.load(tracks: $0) },
-            getDuration: { await player.extractMetadata(from: $0) },
-            play: {},
-            pause: {},
-            playNext: {},
-            playPrevious: {}, 
+            play: { await player.play() },
+            pause: { await player.pause() },
+            playNext: { await player.playNextTrack() },
+            playPrevious: { await player.playPreviousTrack() },
+            playbackProgress: { try await player.normalizedPlaybackTime() },
+            playbackTime: { try await player.playbackTime() },
             setPlaybackSpeed: { _ in },
-            rewind: { _ in  },
-            fastForward: { _ in })
+            rewind: {  try await player.rewind($0) },
+            rewindSeconds: { try await player.rewind(seconds: $0) },
+            currentAudioId: { await player.currentAudioIdStream }
+        )
     }()
 }
+struct PlaylistItem: Equatable {
+    let id: Int
+    let item: AVPlayerItem
+    let duration: Double
+}
 
-fileprivate actor AudioPlayer {
-    let player = AVQueuePlayer()
+fileprivate actor AudioPlayer: Sendable {
+    private let player = AVQueuePlayer()
+    private let (stream, continuateion) = AsyncStream<Int>.makeStream()
+    private var playlist: [PlaylistItem] = []
+    private var itemDidFinishObserver: Any?
+    private var currentItem: PlaylistItem? = nil {
+        didSet {
+            if let currentItem {
+                continuateion.yield(currentItem.id)
 
-    func load(tracks: [AudioTrack]) async throws {
-        let items = tracks.map { AVPlayerItem(url: $0.url) }
-        // TODO: Handle not playable items
-
-        items.forEach { player.insert($0, after: nil) }
+            }
+        }
     }
 
-    func extractMetadata(from tracks: [AudioTrack]) -> [Metadata] {
-        return tracks.map { track in
-            let asset = AVAsset(url: track.url)
-            let duration = CMTimeGetSeconds(asset.duration)
-            return Metadata(id: track.id, duration: duration)
+    var currentAudioIdStream: AsyncStream<Int> {
+        stream
+    }
+
+
+    init() {
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback)
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            print("Failed to set audio session category. Error: \(error)")
         }
+
+
+        itemDidFinishObserver = NotificationCenter.default.addObserver(
+            forName: AVPlayerItem.didPlayToEndTimeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] object in
+            guard let item = object.object as? AVPlayerItem else { return }
+            self?.setNextCurrentItem(currentItem: item)
+        }
+    }
+
+    deinit {
+        if let itemDidFinishObserver {
+            NotificationCenter.default.removeObserver(itemDidFinishObserver)
+        }
+    }
+
+    private func setNextCurrentItem(currentItem: AVPlayerItem) {
+        if let currentIndex = playlist.firstIndex(where: { $0.item == currentItem }) {
+            let nextIndex = currentIndex + 1
+            if nextIndex < playlist.count {
+                self.currentItem = playlist[nextIndex]
+            } else {
+                // End of playlist
+            }
+        }
+    }
+
+    func load(tracks: [AudioTrack]) async throws -> [Metadata] {
+        var metadata: [Metadata] = []
+        var playlist: [PlaylistItem] = []
+
+        for track in tracks {
+            let item = AVPlayerItem(url: track.url)
+            let isPlayable = try await item.asset.load(.isPlayable)
+            if isPlayable {
+                let duration = try await item.asset.load(.duration)
+                metadata.append(Metadata(trackId: track.id, duration: CMTimeGetSeconds(duration)))
+                playlist.append(PlaylistItem(id: track.id, item: item, duration: duration.seconds))
+                player.insert(item, after: nil)
+            }
+        }
+        
+        self.playlist = playlist
+        self.currentItem = playlist.first
+
+        return metadata
+    }
+
+    func play() async {
+        await player.play()
+    }
+
+    func pause() async {
+        await player.pause()
+    }
+
+    func playNextTrack() {
+        if let currentItem {
+            if playlist.isLastElement(currentItem) { return }
+            setNextCurrentItem(currentItem: currentItem.item)
+            player.advanceToNextItem()
+        }
+    }
+
+    func playPreviousTrack() {
+        if let currentItem, let currentIndex = playlist.firstIndex(where: { $0.item == currentItem.item }) {
+            player.removeAllItems()
+            playlist.forEach { item in
+                item.item.seek(to: .zero, completionHandler: nil)
+            }
+            let newlist = playlist.suffix(from: currentIndex == 0 ? 0 : currentIndex - 1)
+
+            newlist.forEach { item in
+                player.insert(item.item, after: nil)
+            }
+            self.currentItem = newlist.first
+        }
+    }
+
+    func rewind(_ value: Double) async throws {
+        guard let item = player.currentItem else {
+            throw AudioMetadataClientError.fileNotFound("Current item is not available.")
+        }
+        let duration = try await item.asset.load(.duration)
+        let seconds = duration.seconds * value
+        let time = CMTime(seconds: seconds)
+
+        await item.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero)
+    }
+
+    func rewind(seconds: Double) async throws {
+        guard let item = player.currentItem else {
+            throw AudioMetadataClientError.fileNotFound("Current item is not available.")
+        }
+
+        let newTime = item.currentTime() + CMTime(seconds: seconds)
+
+
+        await item.seek(to: newTime, toleranceBefore: .zero, toleranceAfter: .zero)
+    }
+
+
+    struct ObserverContainer: @unchecked Sendable {
+        let observer: Any
+    }
+
+    func getCurrentDuration() async throws -> CMTime {
+        guard let duration = try await player.currentItem?.asset.load(.duration) else {
+            throw AudioMetadataClientError.fileNotFound("Current item is not available.")
+        }
+        return duration
+    }
+
+    func normalizedPlaybackTime() async throws -> AsyncStream<Double> {
+        let (stream, continuation) = AsyncStream.makeStream(of: Double.self)
+
+
+        let observer = player.addPeriodicTimeObserver(forInterval: CMTime(seconds: 1, preferredTimescale: 1), queue: .main) { time in
+            Task { @Sendable [weak self] in
+                guard let duration = try await self?.getCurrentDuration() else { return }
+                continuation.yield(CMTimeGetSeconds(time) / CMTimeGetSeconds(duration))
+            }
+        }
+
+        let container = ObserverContainer(observer: observer)
+
+        continuation.onTermination = { @Sendable _ in
+            Task {
+                await self.removeObserver(container)
+            }
+        }
+        return stream
+    }
+
+    func playbackTime() async throws -> AsyncStream<Double> {
+        let (stream, continuation) = AsyncStream.makeStream(of: TimeInterval.self)
+
+        let observer = player.addPeriodicTimeObserver(forInterval: CMTime(seconds: 1, preferredTimescale: 1), queue: .main) { time in
+                continuation.yield(time.seconds)
+        }
+
+        let container = ObserverContainer(observer: observer)
+
+        continuation.onTermination = { @Sendable _ in
+            Task {
+                await self.removeObserver(container)
+            }
+        }
+        return stream
+    }
+
+    func removeObserver(_ container: ObserverContainer) {
+        self.player.removeTimeObserver(container.observer)
     }
 }
 
+extension CMTime {
+    init(seconds: Double) {
+        self = CMTime(value: CMTimeValue(seconds), timescale: 1)
+    }
 
+    var seconds: Double {
+        CMTimeGetSeconds(self)
+    }
+}

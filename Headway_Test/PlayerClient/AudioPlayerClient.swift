@@ -13,18 +13,20 @@ struct AudioTrack: Equatable {
 }
 
 struct Metadata: Equatable {
-    let id: Int
+    let trackId: Int
     let duration: TimeInterval
 }
 
 struct AudioPlayerClient {
-    var loadPlaylist: @Sendable ([AudioTrack]) async throws -> Void
-    var getDuration: @Sendable ([AudioTrack]) async throws -> [Metadata]
+    var loadPlaylist: @Sendable ([AudioTrack]) async throws -> [Metadata]
     var play: @Sendable () async -> Void
     var pause: @Sendable () async -> Void
     var playNext: @Sendable () async -> Void
     var playPrevious: @Sendable () async -> Void
+    var playbackProgress: @Sendable () async throws -> AsyncStream<Double>
+    var playbackTime: @Sendable () async throws -> AsyncStream<Double>
     var setPlaybackSpeed: @Sendable (Float) async -> Void
-    var rewind: @Sendable (TimeInterval) async -> Void
-    var fastForward: @Sendable (TimeInterval) async -> Void
+    var rewind: @Sendable (Double) async throws -> Void
+    var rewindSeconds: @Sendable (Double) async throws -> Void
+    var currentAudioId: @Sendable () async -> AsyncStream<Int>
 }

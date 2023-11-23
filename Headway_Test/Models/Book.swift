@@ -12,12 +12,11 @@ struct Book: Identifiable, Equatable {
     let title: String
     let author: String
     let coverImageName: String
-    var chapters: [Chapter]
 }
 
 struct Chapter: Identifiable, Equatable {
     let id: Int
     let title: String
-    let audioFileName: String
-    var duration: TimeInterval? = nil
+    let audioFile: URL
+    var duration: TimeInterval?
 }

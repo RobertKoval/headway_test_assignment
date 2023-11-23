@@ -32,7 +32,7 @@ extension AudioPlayerClient: DependencyKey {
             playPrevious: { await player.playPreviousTrack() },
             playbackProgress: { try await player.normalizedPlaybackTime() },
             playbackTime: { try await player.playbackTime() },
-            setPlaybackSpeed: { _ in },
+            setPlaybackRate: { await player.setRate($0) },
             rewind: {  try await player.rewind($0) },
             rewindSeconds: { try await player.rewind(seconds: $0) },
             currentAudioId: { await player.currentAudioIdStream },
@@ -176,6 +176,12 @@ fileprivate actor AudioPlayer: Sendable {
                 player.insert(item.item, after: nil)
             }
             self.currentItem = newlist.first
+        }
+    }
+
+    func setRate(_ rate: Float) async {
+        await MainActor.run {
+            player.rate = rate
         }
     }
 

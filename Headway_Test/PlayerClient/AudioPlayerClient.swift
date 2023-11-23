@@ -25,7 +25,7 @@ struct AudioPlayerClient {
     var playPrevious: @Sendable () async -> Void
     var playbackProgress: @Sendable () async throws -> AsyncStream<Double>
     var playbackTime: @Sendable () async throws -> AsyncStream<Double>
-    var setPlaybackSpeed: @Sendable (Float) async -> Void
+    var setPlaybackRate: @Sendable (Float) async -> Void
     var rewind: @Sendable (Double) async throws -> Void
     var rewindSeconds: @Sendable (Double) async throws -> Void
     var currentAudioId: @Sendable () async -> AsyncStream<Int>

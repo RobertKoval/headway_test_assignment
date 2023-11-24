@@ -12,7 +12,7 @@ import ComposableArchitecture
 struct Headway_TestApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView(store: .init(initialState: BookPlayerFeature.State(), reducer: { BookPlayerFeature() }))
+            MainView(store: .init(initialState: BookPlayerFeature.State(book: mockBook), reducer: { BookPlayerFeature() }))
         }
     }
 }

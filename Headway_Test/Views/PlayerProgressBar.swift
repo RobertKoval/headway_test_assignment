@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct PlayerProgressView: View {
+struct PlayerProgressBar: View {
     @Binding var value: Double
     @State private var isDragging: Bool = false
     
@@ -64,6 +64,6 @@ struct PlayerProgressView: View {
 
 
 #Preview {
-    PlayerProgressView(value: .constant(5), in: 0...10)
+    PlayerProgressBar(value: .constant(5), in: 0...10)
         .padding()
 }

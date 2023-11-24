@@ -74,6 +74,18 @@ fileprivate actor AudioPlayer: Sendable {
         }
 
 
+        Task {
+            await createObserver()
+        }
+    }
+
+    deinit {
+        Task {
+           await removeObserver()
+        }
+    }
+
+    func createObserver() {
         itemDidFinishObserver = NotificationCenter.default.addObserver(
             forName: AVPlayerItem.didPlayToEndTimeNotification,
             object: nil,
@@ -84,7 +96,7 @@ fileprivate actor AudioPlayer: Sendable {
         }
     }
 
-    deinit {
+    func removeObserver() {
         if let itemDidFinishObserver {
             NotificationCenter.default.removeObserver(itemDidFinishObserver)
         }

@@ -15,10 +15,6 @@ extension DependencyValues {
     }
 }
 
-enum ChapterLoadingError: Error {
-    case audioFileNotFound(String)
-}
-
 extension ChapterRepositoryClient: DependencyKey {
     // Actually MOCK
     static let liveValue = Self { book in
@@ -30,9 +26,9 @@ extension ChapterRepositoryClient: DependencyKey {
             (5, "walen - In Your Eyes", "audio_5.mp3")
         ]
 
-        return try chaptersData.map { id, title, audioFileName in
+        return chaptersData.compactMap { id, title, audioFileName in
             guard let url = Bundle.main.url(forResource: audioFileName, withExtension: nil) else {
-                throw ChapterLoadingError.audioFileNotFound(audioFileName)
+               return nil
             }
 
             return Chapter(id: id, title: title, audioFile: url)

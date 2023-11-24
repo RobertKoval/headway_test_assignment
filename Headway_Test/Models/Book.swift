@@ -18,5 +18,10 @@ struct Chapter: Identifiable, Equatable {
     let id: Int
     let title: String
     let audioFile: URL
-    var duration: TimeInterval?
+}
+
+struct LoadedChapter: Equatable {
+    let id: Int
+    let title: String
+    let duration: String
 }

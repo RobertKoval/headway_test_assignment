@@ -6,7 +6,7 @@
 //
 
 import XCTest
-@testable import Headway_Test
+@testable import HeadwayBookPlayerFeature
 import ComposableArchitecture
 import SharedModels
 import PlayerClient

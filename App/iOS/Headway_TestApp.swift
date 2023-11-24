@@ -6,7 +6,16 @@
 //
 
 import SwiftUI
-import ComposableArchitecture
+import HeadwayBookPlayerFeature
+import SharedModels
+
+public let mockBook = Book(
+    id: UUID(),
+    title: "Why Robert Koval is the best candidate for this position",
+    author: "Paul C. Green",
+    coverImageName: "book_1"
+)
+
 
 @main
 struct Headway_TestApp: App {

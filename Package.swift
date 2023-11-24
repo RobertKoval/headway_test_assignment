@@ -4,13 +4,13 @@
 import PackageDescription
 
 let package = Package(
-    name: "Headway_Test",
+    name: "HeadwayBookPlayerFeature",
     platforms: [.iOS(.v15)],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
-            name: "Headway_Test",
-            targets: ["Headway_Test"]),
+            name: "HeadwayBookPlayerFeature",
+            targets: ["HeadwayBookPlayerFeature"]),
         .library(
             name: "ChapterRepositoryClient",
             targets: ["ChapterRepositoryClient"]),
@@ -35,7 +35,7 @@ let package = Package(
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "Headway_Test",
+            name: "HeadwayBookPlayerFeature",
         dependencies: [
             .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
             "SharedModels",
@@ -45,8 +45,8 @@ let package = Package(
             "FeedbackGeneratorClient",
         ]),
         .testTarget(
-            name: "Headway_TestTests",
-            dependencies: ["Headway_Test"]),
+            name: "HeadwayBookPlayerFeatureTests",
+            dependencies: ["HeadwayBookPlayerFeature"]),
         .target(
             name: "ChapterRepositoryClient",
             dependencies: [

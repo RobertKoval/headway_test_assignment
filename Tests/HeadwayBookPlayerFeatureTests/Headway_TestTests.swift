@@ -82,49 +82,4 @@ final class Headway_TestTests: XCTestCase {
 
         await store.send(.onDisappear)
     }
-
-
-
-
-//    func testPlayPauseAction() async {
-//        let store = TestStore(initialState: BookPlayerFeature.State()) {
-//            BookPlayerFeature()
-//        }
-//
-//        await store.send(.playPauseButtonTapped) {
-//            $0.playerState.isPlaying = true
-//        }
-//
-////        await store.send(.onAppear)
-////        await store.receive(.fetchCounter)
-//    }
-//
-//    func testPageSwitchAction() async {
-//        let store = TestStore(initialState: BookPlayerFeature.State()) {
-//            BookPlayerFeature()
-//        }
-//
-//        await store.send(.chapterListSwitchToggled) {
-//            $0.isChapterListOpen = true
-//        }
-//    }
-//
-//    func testAudioLoading() async {
-//        let store = TestStore(initialState: BookPlayerFeature.State()) {
-//            BookPlayerFeature()
-//        }
-//
-//        await store.send(.onAppear)
-//        await store.receive(.trackLoaded([]))
-//    }
-//
-//
-//    func testPreviousAudio() async {
-//        let store = TestStore(initialState: BookPlayerFeature.State()) {
-//            BookPlayerFeature()
-//        }
-//
-//        await store.send(.goBackwardButtonTapped)
-//    }
-
 }
